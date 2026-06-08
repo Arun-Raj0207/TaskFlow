@@ -15,7 +15,6 @@ import StatCard from "../components/statcard";
 function Dashboard() {
   const [tasks, setTasks] = useState([]);
   const totalTasks = tasks.length;
-  const userName = localStorage.getItem("name");
   const pendingTasks =
   tasks.filter(
     (task) => !task.completed
@@ -176,13 +175,13 @@ const upcomingTasks = tasks
               key={task._id}
               sx={{
                 display: "flex",
-                alignItems: "flex-start",
+                alignItems: "center",
                 justifyContent: "space-between",
                 py: 2,
                 borderBottom: "1px solid #f0f0f0",
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, flex: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
                 <Box
                   sx={{
                     width: 6,
@@ -193,9 +192,11 @@ const upcomingTasks = tasks
                   }}
                 />
 
-                <Box>
-                  <Typography fontWeight={600} sx={{ lineHeight: 1.15, textAlign: "left" }}>{task.title}</Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", flex: 1, minWidth: 0 }}>
+                  <Typography fontWeight={600} sx={{ lineHeight: 1.2, textAlign: "left" }}>
+                    {task.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, textAlign: "left" }}>
                     {task.description
                       ? `${task.description.slice(0, 80)}${
                           task.description.length > 80 ? "…" : ""
