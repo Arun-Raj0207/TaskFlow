@@ -23,21 +23,34 @@ app.get("/api/protected", protect, (req, res) => {
 const PORT = process.env.PORT || 5000;
 const mongoUri = process.env.MONGO_URI || (process.env.NODE_ENV === "development" ? "mongodb://localhost:27017/task-manager" : undefined);
 
-if (!mongoUri) {
-  console.error("Missing MONGO_URI. Set the MONGO_URI environment variable before starting the backend.");
-  process.exit(1);
-}
-
-console.log("Connecting to MongoDB at:", mongoUri);
-mongoose.connect(mongoUri)
-  .then(() => {
-    console.log("MongoDB Connected");
-
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error("MongoDB connection failed:", err.message || err);
-    process.exit(1);
+const startServer = () => {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    if (!mongoUri) console.warn("Warning: running without a MongoDB connection (MONGO_URI not set).");
   });
+};
+
+if (!mongoUri) {
+  console.warn("MONGO_URI not set. Starting server without connecting to MongoDB.");
+  startServer();
+} else {
+  console.log("Connecting to MongoDB at:", mongoUri);
+  mongoose.connect(mongoUri)
+    .then(() => {
+      console.log("MongoDB Connected");
+      startServer();
+    })
+    .catch((err) => {
+      console.error("MongoDB connection failed:", err.message || err);
+      console.warn("Continuing to run the server without a MongoDB connection. Some features may fail.");
+      startServer();
+    });
+
+  mongoose.connection.on("error", (err) => {
+    console.error("MongoDB connection error:", err.message || err);
+  });
+
+  mongoose.connection.once("open", () => {
+    console.log("MongoDB connection is open");
+  });
+}
