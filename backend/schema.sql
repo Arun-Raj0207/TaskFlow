@@ -1,3 +1,6 @@
+-- Enable UUID generation extension required by gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -31,18 +34,40 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 
 -- Optional: Create policies for RLS (adjust based on your auth strategy)
--- Users can only view/modify their own tasks
-CREATE POLICY "Users can view own profile" ON users
-  FOR SELECT USING (true);
+DO $$
+BEGIN
+  BEGIN
+    CREATE POLICY "Users can view own profile" ON users
+      FOR SELECT USING (true);
+  EXCEPTION WHEN duplicate_object THEN
+    NULL;
+  END;
 
-CREATE POLICY "Users can view own tasks" ON tasks
-  FOR SELECT USING (true);
+  BEGIN
+    CREATE POLICY "Users can view own tasks" ON tasks
+      FOR SELECT USING (true);
+  EXCEPTION WHEN duplicate_object THEN
+    NULL;
+  END;
 
-CREATE POLICY "Users can create own tasks" ON tasks
-  FOR INSERT WITH CHECK (true);
+  BEGIN
+    CREATE POLICY "Users can create own tasks" ON tasks
+      FOR INSERT WITH CHECK (true);
+  EXCEPTION WHEN duplicate_object THEN
+    NULL;
+  END;
 
-CREATE POLICY "Users can update own tasks" ON tasks
-  FOR UPDATE USING (true);
+  BEGIN
+    CREATE POLICY "Users can update own tasks" ON tasks
+      FOR UPDATE USING (true);
+  EXCEPTION WHEN duplicate_object THEN
+    NULL;
+  END;
 
-CREATE POLICY "Users can delete own tasks" ON tasks
-  FOR DELETE USING (true);
+  BEGIN
+    CREATE POLICY "Users can delete own tasks" ON tasks
+      FOR DELETE USING (true);
+  EXCEPTION WHEN duplicate_object THEN
+    NULL;
+  END;
+END$$;

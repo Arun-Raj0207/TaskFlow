@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const protect = require("./middleware/authMiddleware");
 const taskRoutes = require("./routes/taskRoutes");
 const dotenv = require("dotenv");
@@ -34,12 +36,20 @@ const startServer = () => {
   });
 };
 
+const initializeDatabase = async () => {
+  const schemaPath = path.join(__dirname, "schema.sql");
+  const schemaSql = fs.readFileSync(schemaPath, "utf8");
+  console.log("Initializing database schema...");
+  await pool.query(schemaSql);
+  console.log("Database schema initialized successfully.");
+};
+
 if (!dbUrl) {
   console.warn("DATABASE_URL not set. Starting server without connecting to PostgreSQL.");
   startServer();
 } else {
   console.log("Connecting to PostgreSQL...");
-  pool.connect((err, client, release) => {
+  pool.connect(async (err, client, release) => {
     if (err) {
       console.error("PostgreSQL connection failed:", err.message || err);
       console.warn("Continuing to run the server without a database connection. Some features may fail.");
@@ -47,7 +57,13 @@ if (!dbUrl) {
     } else {
       console.log("PostgreSQL Connected");
       release();
-      startServer();
+      try {
+        await initializeDatabase();
+        startServer();
+      } catch (initError) {
+        console.error("Database initialization failed:", initError.message || initError);
+        process.exit(1);
+      }
     }
   });
 
