@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+
 const protect = async (req, res, next) => {
     let token;
     if (
@@ -13,7 +14,7 @@ const protect = async (req, res, next) => {
                 token,
                 process.env.JWT_SECRET
             );
-            req.user = await User.findById(decoded.id).select("-password");
+            req.user = await User.findById(decoded.id);
             if (!req.user) {
                 return res.status(401).json({
                     message: "Not authorized, user not found"
@@ -25,8 +26,7 @@ const protect = async (req, res, next) => {
                 message: "Not authorized, token failed"
             });
         }
-    }
-    if (!token) {
+    } else if (!token) {
         return res.status(401).json({
             message: "Not authorized, no token"
         });

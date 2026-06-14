@@ -3,54 +3,55 @@ const taskRoutes = require("./routes/taskRoutes");
 const dotenv = require("dotenv");
 dotenv.config();
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
+const { pool } = require("./db");
+
 const app = express();
 app.use(cors());
 app.use(express.json());
+
 const authRoutes = require("./routes/authRoots");
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
+
 app.get("/", (req, res) => {
   res.send("YOOO IM ALIVE");
 });
+
 app.get("/api/protected", protect, (req, res) => {
     res.json({
         message: "Protected route accessed",
         user: req.user
     });
 });
+
 const PORT = process.env.PORT || 5000;
-const mongoUri = process.env.MONGO_URI || (process.env.NODE_ENV === "development" ? "mongodb://localhost:27017/task-manager" : undefined);
+const dbUrl = process.env.DATABASE_URL;
 
 const startServer = () => {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    if (!mongoUri) console.warn("Warning: running without a MongoDB connection (MONGO_URI not set).");
   });
 };
 
-if (!mongoUri) {
-  console.warn("MONGO_URI not set. Starting server without connecting to MongoDB.");
+if (!dbUrl) {
+  console.warn("DATABASE_URL not set. Starting server without connecting to PostgreSQL.");
   startServer();
 } else {
-  console.log("Connecting to MongoDB at:", mongoUri);
-  mongoose.connect(mongoUri)
-    .then(() => {
-      console.log("MongoDB Connected");
+  console.log("Connecting to PostgreSQL...");
+  pool.connect((err, client, release) => {
+    if (err) {
+      console.error("PostgreSQL connection failed:", err.message || err);
+      console.warn("Continuing to run the server without a database connection. Some features may fail.");
       startServer();
-    })
-    .catch((err) => {
-      console.error("MongoDB connection failed:", err.message || err);
-      console.warn("Continuing to run the server without a MongoDB connection. Some features may fail.");
+    } else {
+      console.log("PostgreSQL Connected");
+      release();
       startServer();
-    });
-
-  mongoose.connection.on("error", (err) => {
-    console.error("MongoDB connection error:", err.message || err);
+    }
   });
 
-  mongoose.connection.once("open", () => {
-    console.log("MongoDB connection is open");
+  pool.on("error", (err) => {
+    console.error("PostgreSQL connection error:", err.message || err);
   });
 }
